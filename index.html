@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0d0c" />
+  <title>KESTREL RANGE — Weapons Proving Ground</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="scene"></canvas>
+    <div id="vignette"></div>
+    <div id="grain"></div>
+
+    <!-- ===================== HUD ===================== -->
+    <div id="hud" class="hidden">
+      <div class="hud-brand">
+        <div class="brand-mark"><span></span><span></span><span></span></div>
+        <div>
+          <h1>KESTREL RIDGE</h1>
+          <p>WEAPONS PROVING GROUND&nbsp;&nbsp;/&nbsp;&nbsp;SECTOR 7</p>
+        </div>
+      </div>
+
+      <div class="hud-objective">
+        <div class="hud-objective-label"><i></i> LIVE FIRE</div>
+        <div id="objectiveText" class="hud-objective-main">FREE SHOOT — ZERO &amp; VERIFY</div>
+        <div id="objectiveSub" class="hud-objective-sub">ENGAGE STEEL AND PAPER · ALL SYSTEMS NOMINAL</div>
+      </div>
+
+      <div class="hud-telemetry">
+        <div class="tel-row"><span>WIND</span><b id="telWind">2.1 M/S</b></div>
+        <div class="tel-row"><span>DENSITY ALT</span><b>84 M</b></div>
+        <div class="tel-row"><span>TEMP</span><b>21 °C</b></div>
+      </div>
+
+      <div class="hud-left">
+        <div class="stat-block">
+          <div class="stat-label">SESSION SCORE</div>
+          <div id="scoreValue" class="stat-value">00000</div>
+          <div class="stat-sub"><span id="hitCount">0 HITS</span><span id="hitStreak">STREAK 0</span></div>
+        </div>
+        <div class="stat-block slim">
+          <div class="stat-label">ACCURACY</div>
+          <div id="accuracyValue" class="stat-value small">--.-<em>%</em></div>
+          <div class="meter"><i id="accuracyBar"></i></div>
+        </div>
+        <div id="drillPanel" class="drill-panel hidden">
+          <div class="drill-head"><span>DRILL ACTIVE</span><b id="drillTime">60.0</b></div>
+          <div class="drill-targets"><span>HOSTILES</span><b id="drillRemaining">15</b></div>
+          <div class="drill-bar"><i id="drillBar"></i></div>
+        </div>
+      </div>
+
+      <div id="compass" class="compass">
+        <div class="compass-ticks">
+          <span>W</span><span>NW</span><span>N</span><span>NE</span><span>E</span><span>SE</span><span>S</span><span>SW</span><span>W</span>
+        </div>
+        <div id="compassNeedle" class="compass-needle"></div>
+        <div class="compass-degrees"><span id="compassDeg">000</span>°</div>
+      </div>
+
+      <div id="crosshair" class="crosshair">
+        <i class="ch ch-t"></i><i class="ch ch-b"></i><i class="ch ch-l"></i><i class="ch ch-r"></i>
+        <span class="ch-dot"></span>
+        <span class="ch-ring"></span>
+      </div>
+      <div id="hitmarker" class="hitmarker"><i></i><i></i><i></i><i></i></div>
+      <div id="rangefinder" class="rangefinder hidden"><span id="rangeNum">100</span><small>M</small></div>
+      <div id="targetLabel" class="target-label hidden"><b></b><span></span></div>
+
+      <div class="hud-right">
+        <div id="weaponName" class="weapon-name">WINDHAM WEAPONRY WW-15</div>
+        <div id="weaponType" class="weapon-type">5.56×45 MM NATO · CARBINE</div>
+        <div id="attachmentsLive" class="attachments-live"></div>
+      </div>
+
+      <div class="hud-ammo">
+        <div class="ammo-mode"><span id="fireMode">AUTO</span><i></i><span id="weaponSlotLabel">SLOT 1</span></div>
+        <div class="ammo-count"><b id="ammoValue">30</b><span>/</span><em id="reserveValue">120</em></div>
+        <div class="ammo-label">ROUNDS READY</div>
+        <div id="reloadTrack" class="reload-track"><i id="reloadBar"></i></div>
+      </div>
+
+      <div id="weaponSlots" class="weapon-slots"></div>
+
+      <div id="toast" class="toast"></div>
+      <div id="hitFeed" class="hit-feed"></div>
+
+      <div class="hud-controls">
+        <span><b>RMB</b> AIM</span><span><b>R</b> RELOAD</span><span><b>G</b> GUNSMITH</span><span><b>T</b> DRILL</span><span><b>ESC</b> PAUSE</span>
+      </div>
+
+      <div id="damageFlash" class="damage-flash"></div>
+    </div>
+
+    <!-- ===================== SCOPE ===================== -->
+    <div id="scopeOverlay" class="scope-overlay hidden">
+      <div class="scope-mask"></div>
+      <div class="scope-reticle">
+        <i class="sr-h"></i><i class="sr-v"></i>
+        <i class="sr-tick l1"></i><i class="sr-tick l2"></i><i class="sr-tick l3"></i>
+        <i class="sr-tick r1"></i><i class="sr-tick r2"></i><i class="sr-tick r3"></i>
+        <i class="sr-mil m1"></i><i class="sr-mil m2"></i><i class="sr-mil m3"></i>
+        <span class="sr-center"></span>
+        <div class="sr-range"><span id="scopeRange">100</span><small>M</small></div>
+      </div>
+      <div class="scope-data">
+        <span>MOSSBERG MVP PREDATOR</span>
+        <span>6.5 CREEDMOOR · 4–16×44</span>
+        <b>MIL-DOT</b>
+      </div>
+    </div>
+
+    <!-- ===================== LOADING ===================== -->
+    <div id="loading" class="loading">
+      <div class="load-inner">
+        <div class="load-mark"><span></span><span></span><span></span></div>
+        <h1>KESTREL RIDGE</h1>
+        <p>WEAPONS PROVING GROUND</p>
+        <div class="load-track"><i id="loadBar"></i></div>
+        <div id="loadText" class="load-text">CALIBRATING BALLISTICS…</div>
+        <div class="load-foot">RANGE SECTOR 07 · CLASSIFIED TRAINING FACILITY</div>
+      </div>
+    </div>
+
+    <!-- ===================== MAIN MENU ===================== -->
+    <div id="menu" class="overlay menu hidden">
+      <div class="menu-top">
+        <div class="menu-brand">
+          <div class="brand-mark"><span></span><span></span><span></span></div>
+          <div>
+            <h1>KESTREL RIDGE</h1>
+            <p>WEAPONS PROVING GROUND · SECTOR 07</p>
+          </div>
+        </div>
+        <div class="menu-status"><i></i> RANGE COLD · SYSTEMS ONLINE</div>
+      </div>
+
+      <div class="menu-body">
+        <div class="menu-copy">
+          <div class="eyebrow">FIRST-PERSON BALLISTICS LABORATORY</div>
+          <h2>KNOW YOUR<br /><em>WEAPON.</em></h2>
+          <p>Six platforms. Full attachment loadouts. A one-hundred-metre instrumented range. Zero the optic, read the wind, and put rounds where they belong.</p>
+          <div class="menu-actions">
+            <button id="btnStart" class="btn primary"><span>ENTER RANGE</span><i>→</i></button>
+            <button id="btnGunsmithMenu" class="btn"><span>GUNSMITH</span><i>◈</i></button>
+            <button id="btnOperatorMenu" class="btn"><span>OPERATOR</span><i>◉</i></button>
+          </div>
+          <div class="menu-note">POINTER LOCK · MOUSE + KEYBOARD · TOUCH SUPPORTED</div>
+        </div>
+
+        <div class="menu-panel">
+          <div class="panel-label">ACTIVE LOADOUT</div>
+          <div class="loadout-row">
+            <div class="loadout-index">01</div>
+            <div class="loadout-info">
+              <b>WINDHAM WEAPONRY WW-15</b>
+              <span>HOLO · BRAKE · FOREGRIP · TRIGGER · STOCK</span>
+            </div>
+            <div class="loadout-bar"><i></i><i></i><i></i><i></i><i></i></div>
+          </div>
+          <div class="panel-label spaced">CONTROLS</div>
+          <div class="control-grid">
+            <div><b>WASD</b><span>MOVE</span></div>
+            <div><b>SHIFT</b><span>SPRINT</span></div>
+            <div><b>C</b><span>CROUCH</span></div>
+            <div><b>LMB</b><span>FIRE</span></div>
+            <div><b>RMB</b><span>AIM</span></div>
+            <div><b>R</b><span>RELOAD</span></div>
+            <div><b>1–6</b><span>WEAPON</span></div>
+            <div><b>G</b><span>GUNSMITH</span></div>
+            <div><b>T</b><span>TIMED DRILL</span></div>
+          </div>
+          <div class="panel-label spaced">RANGE CONDITIONS</div>
+          <div class="cond-grid">
+            <div><span>VISIBILITY</span><b>EXCELLENT</b></div>
+            <div><span>WIND</span><b>2.1 M/S · W</b></div>
+            <div><span>LIGHT</span><b>GOLDEN HOUR</b></div>
+            <div><span>TARGETS</span><b>STEEL / PAPER</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="menu-foot">
+        <span>KESTREL RIDGE · BUILD 1.0.0</span>
+        <span>HEADPHONES RECOMMENDED · AUDIO SYNTHESIZED IN-ENGINE</span>
+      </div>
+    </div>
+
+    <!-- ===================== PAUSE ===================== -->
+    <div id="pause" class="overlay pause hidden">
+      <div class="pause-card">
+        <div class="eyebrow">RANGE PAUSED</div>
+        <h2>HOLD FIRE.</h2>
+        <div class="pause-stats">
+          <div><span>SCORE</span><b id="pauseScore">00000</b></div>
+          <div><span>ACCURACY</span><b id="pauseAccuracy">--.-%</b></div>
+          <div><span>SHOTS</span><b id="pauseShots">0</b></div>
+          <div><span>HITS</span><b id="pauseHits">0</b></div>
+        </div>
+        <div class="settings-row">
+          <label for="sens">MOUSE SENSITIVITY <b id="sensValue">1.0</b></label>
+          <input id="sens" type="range" min="0.35" max="2.5" step="0.05" value="1.0" />
+        </div>
+        <div class="settings-row toggle-row">
+          <span>INVERT LOOK</span>
+          <button id="btnInvert" class="toggle" aria-pressed="false"><i></i></button>
+        </div>
+        <div class="pause-actions">
+          <button id="btnResume" class="btn primary"><span>RESUME</span><i>→</i></button>
+          <button id="btnGunsmithPause" class="btn"><span>GUNSMITH</span><i>◈</i></button>
+          <button id="btnRestart" class="btn danger"><span>RESET RANGE</span><i>↺</i></button>
+        </div>
+        <div class="pause-note">PRESS <b>ESC</b> TO RETURN TO THE RANGE</div>
+      </div>
+    </div>
+
+    <!-- ===================== GUNSMITH / OPERATOR ===================== -->
+    <div id="gunsmith" class="overlay gunsmith hidden">
+      <div class="gs-header">
+        <div class="gs-brand"><div class="brand-mark"><span></span><span></span><span></span></div>
+          <div><h1>KESTREL ARMORY</h1><p>PLATFORM INSPECTION · ATTACHMENT CONFIGURATION</p></div>
+        </div>
+        <div class="gs-tabs">
+          <button id="tabWeapons" class="gs-tab active">WEAPONS</button>
+          <button id="tabOperator" class="gs-tab">OPERATOR</button>
+        </div>
+        <button id="btnCloseGunsmith" class="gs-close"><span>RETURN TO RANGE</span><i>✕</i></button>
+      </div>
+
+      <div id="gsWeaponLayout" class="gs-layout">
+        <aside class="gs-list">
+          <div class="gs-list-label">PLATFORMS <span>06</span></div>
+          <div id="gsWeaponList"></div>
+          <div class="gs-list-foot">SELECT PLATFORM · DRAG TO ORBIT · SCROLL TO ZOOM</div>
+        </aside>
+
+        <div class="gs-view">
+          <div class="gs-view-top"><span id="gsCategory">CARBINE · 5.56×45</span><span class="gs-live"><i></i> MODEL INSPECTION</span></div>
+          <div class="gs-view-bottom"><span id="gsHint">DRAG TO ROTATE</span><span id="gsSerial">KR-W15-0041</span></div>
+          <div class="gs-crosshair"><i></i><i></i></div>
+        </div>
+
+        <aside class="gs-detail">
+          <div class="gs-title"><div class="eyebrow" id="gsBrand">WINDHAM WEAPONRY</div><h2 id="gsName">WW-15</h2><p id="gsSub">5.56×45 MM NATO · SEMI / AUTO CARBINE</p></div>
+          <div class="gs-stats">
+            <div class="gs-stat"><span>DAMAGE</span><div><i id="stDamage"></i></div><b id="stDamageV">62</b></div>
+            <div class="gs-stat"><span>CONTROL</span><div><i id="stControl"></i></div><b id="stControlV">74</b></div>
+            <div class="gs-stat"><span>RANGE</span><div><i id="stRange"></i></div><b id="stRangeV">68</b></div>
+            <div class="gs-stat"><span>HANDLING</span><div><i id="stHandling"></i></div><b id="stHandlingV">70</b></div>
+          </div>
+          <div class="gs-section-head"><span>ATTACHMENTS</span><b id="attachCount">5 / 5</b></div>
+          <div id="attachmentList" class="attachment-list"></div>
+          <div class="gs-section-head"><span>PLATFORM NOTES</span><b>LIVE</b></div>
+          <p id="gsNotes" class="gs-notes">Cold-hammer-forged barrel. Tuned trigger. Configured for rapid transition between 25 m paper and 100 m steel.</p>
+          <div class="gs-actions">
+            <button id="btnEquip" class="btn primary"><span>EQUIP PLATFORM</span><i>→</i></button>
+          </div>
+        </aside>
+      </div>
+
+      <div id="gsOperatorLayout" class="gs-layout operator-layout hidden">
+        <aside class="gs-list">
+          <div class="gs-list-label">OPERATOR PROFILE <span>01</span></div>
+          <div class="op-profile">
+            <div class="op-avatar">K</div>
+            <div><b>CALLSIGN KESTREL-1</b><span>RANGE SAFETY / DESIGNATED MARKSMAN</span></div>
+          </div>
+          <div class="op-kit-list" id="opKitList"></div>
+          <div class="gs-list-foot">DRAG TO ORBIT · SCROLL TO ZOOM · FULL KIT INSPECTION</div>
+        </aside>
+        <div class="gs-view">
+          <div class="gs-view-top"><span>OPERATOR · FULL KIT</span><span class="gs-live"><i></i> MODEL INSPECTION</span></div>
+          <div class="gs-view-bottom"><span>MULTICAM UNIFORM · LEVEL III+ PLATE CARRIER</span><span>KR-OP-001</span></div>
+          <div class="gs-crosshair"><i></i><i></i></div>
+        </div>
+        <aside class="gs-detail">
+          <div class="gs-title"><div class="eyebrow">KESTREL-1 · RANGE SAFETY</div><h2>OPERATOR</h2><p>MILITARY-CAMOUFLAGE COMBAT LOADOUT</p></div>
+          <div class="gs-section-head"><span>KIT MANIFEST</span><b>09 / 09</b></div>
+          <div id="opGearList" class="attachment-list op-gear"></div>
+          <div class="gs-section-head"><span>PROTECTION</span><b>VERIFIED</b></div>
+          <div class="op-protection">
+            <div><span>PLATE CARRIER</span><b>LEVEL III+</b></div>
+            <div><span>HELMET</span><b>MICH / CAMERA</b></div>
+            <div><span>EYE PRO</span><b>ANSI Z87</b></div>
+            <div><span>GLOVES</span><b>FR / CUT 5</b></div>
+          </div>
+          <p class="gs-notes">Full-spectrum training kit: camouflage uniform, ceramic plate carrier with magazine loadout, helmet-mounted camera, tactical gloves and hard-shell knee pads. Modeled for first-person and inspection views.</p>
+          <div class="gs-actions"><button id="btnResumeFromOp" class="btn primary"><span>RETURN TO RANGE</span><i>→</i></button></div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- ===================== RESULTS ===================== -->
+    <div id="results" class="overlay results hidden">
+      <div class="result-card">
+        <div class="eyebrow">TIMED DRILL COMPLETE</div>
+        <h2>RANGE REPORT</h2>
+        <div class="result-grade" id="resultGrade">A</div>
+        <div class="result-grid">
+          <div><span>SCORE</span><b id="resScore">0000</b></div>
+          <div><span>ACCURACY</span><b id="resAccuracy">0%</b></div>
+          <div><span>TARGETS</span><b id="resTargets">0/0</b></div>
+          <div><span>BEST STREAK</span><b id="resStreak">0</b></div>
+          <div><span>TIME</span><b id="resTime">0.0s</b></div>
+          <div><span>FAVOURITE</span><b id="resWeapon">WW-15</b></div>
+        </div>
+        <div class="result-actions">
+          <button id="btnAgain" class="btn primary"><span>RUN IT AGAIN</span><i>↺</i></button>
+          <button id="btnCloseResults" class="btn"><span>RETURN TO RANGE</span><i>→</i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== MOBILE ===================== -->
+    <div id="mobileControls" class="mobile-controls hidden">
+      <div id="joystick" class="joystick"><div id="joystickKnob" class="joystick-knob"></div><span>MOVE</span></div>
+      <div class="touch-actions">
+        <button id="tFire" class="t-btn fire">FIRE</button>
+        <button id="tAds" class="t-btn">AIM</button>
+        <button id="tReload" class="t-btn small">RELOAD</button>
+        <button id="tSwap" class="t-btn small">SWAP</button>
+        <button id="tGunsmith" class="t-btn small">ARMORY</button>
+        <button id="tMenu" class="t-btn small">MENU</button>
+      </div>
+      <div class="look-hint">DRAG TO LOOK</div>
+    </div>
+
+    <div id="rotateHint" class="rotate-hint hidden">ROTATE DEVICE TO LANDSCAPE FOR THE FULL RANGE EXPERIENCE</div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
